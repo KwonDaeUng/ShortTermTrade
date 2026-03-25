@@ -1,0 +1,11 @@
+2026-03-25 23:16:34,589 - ShortTermBot - INFO - Starting ShortTermTrade Bot...
+2026-03-25 23:16:34,589 - ShortTermBot - INFO - Simulation Mode: True
+2026-03-25 23:18:00,006 - ShortTermBot - INFO - [Summary] KRW: 1,000,000 | Count: 0
+2026-03-25 23:18:30,654 - ShortTermBot - INFO - [Summary] KRW: 1,000,000 | Count: 0
+2026-03-25 23:18:40,249 - ShortTermBot - INFO - [Summary] KRW: 1,000,000 | Count: 0
+2026-03-25 23:19:10,036 - ShortTermBot - INFO - [Summary] KRW: 1,000,000 | Count: 0
+2026-03-25 23:20:30,974 - ShortTermBot - INFO - [Summary] KRW: 1,000,000 | Count: 0
+2026-03-25 23:21:00,427 - ShortTermBot - INFO - [Summary] KRW: 1,000,000 | Count: 0
+2026-03-25 23:23:08,965 - ShortTermBot - INFO - Bot stopped by user (KeyboardInterrupt).
+2026-03-25 23:23:08,985 - ShortTermBot - INFO - Simulation report saved to simulation_report.json
+2026-03-25 23:23:08,985 - ShortTermBot - INFO - Bot shut down gracefully.

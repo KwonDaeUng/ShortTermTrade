@@ -48,6 +48,12 @@ def main():
                     if targets:
                         trader.try_buy_new_targets(targets)
 
+                # 10회 주기마다 상태 요약 출력 (루프 interval 고려)
+                if int(time.time()) % 10 == 0:
+                    balance_krw = trade_api.get_balance("KRW")
+                    holdings_count = len(state.get("holdings", {}))
+                    logger.info(f"[Summary] KRW: {balance_krw:,.0f} | Count: {holdings_count}")
+
                 # 상태 저장
                 save_state(state)
                 
