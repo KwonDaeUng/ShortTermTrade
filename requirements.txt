@@ -1,0 +1,4 @@
+pyupbit
+python-dotenv
+pandas
+requests

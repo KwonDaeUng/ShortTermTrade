@@ -1,0 +1,10 @@
+{
+  "simulation_mode": true,
+  "max_concurrent_coins": 2,
+  "max_total_investment": 350000,
+  "investment_steps": [5500, 11000, 22000, 44000, 88000],
+  "profit_target_rate": 1.015,
+  "stop_loss_rate": 0.985,
+  "monitoring_interval_sec": 1,
+  "rank_volume_limit": 30
+}
