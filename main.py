@@ -46,13 +46,22 @@ def main():
             return "실전 매매 모드입니다. (상세 보고서 미지원)"
         
         hist = trade_api.trade_history
-        if not hist:
-            return "거래 내역이 없습니다."
         
         realized_pn_l = sum([t.get('net_return', 0) for t in hist if t['type'] == 'sell'])
+        # realized cost is the total_cost of the sell transactions' buy counterparts. 
+        # But for simplicity, we use net_return - cost. 
+        # Actually, let's just use the current balance and initial balance if we had it.
+        # For now, keeping the current realized P/L logic.
+        
         total_buy = sum([t.get('total_cost', 0) for t in hist if t['type'] == 'buy'])
         
-        return f"현재 잔고: {trade_api.get_balance('KRW'):,.0f} KRW\n누적 실현 손익: {realized_pn_l:,.0f} KRW\n총 매수 금액: {total_buy:,.0f} KRW"
+        holdings_summary = state_callback()
+        
+        return (f"💰 *매매 보고서 요약*\n"
+                f"- 현재 잔고: {trade_api.get_balance('KRW'):,.0f} KRW\n"
+                f"- 누적 실현 손익: {realized_pn_l:,.0f} KRW\n"
+                f"- 총 매수 누적: {total_buy:,.0f} KRW\n\n"
+                f"📦 *현재 계좌 상태*\n{holdings_summary}")
 
     def state_callback():
         holdings = state.get("holdings", {})
@@ -62,8 +71,11 @@ def main():
         res = []
         for t, info in holdings.items():
             curr = data_api.get_current_price(t)
+            if not curr: continue
             profit = (curr / info['avg_price'] - 1) * 100
-            res.append(f"• {t}: {info['avg_price']:,.2f} -> {curr:,.2f} ({profit:+.2f}%)")
+            buy_price = info['avg_price']
+            amount = info['total_cost']
+            res.append(f"• *{t}*\n  수익률: {profit:+.2f}%\n  매수금액: {amount:,.0f}원 (평단: {buy_price:,.2f})")
         return "\n".join(res)
 
     telegram = TelegramManager(config_callback, report_callback, state_callback)
