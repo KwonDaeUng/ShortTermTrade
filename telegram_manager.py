@@ -27,9 +27,13 @@ class TelegramManager:
         if not self.token or not self.chat_id:
             return
         try:
-            if not self.bot:
+            # Use app.bot if it's already initialized by run_polling
+            target_bot = self.app.bot if self.app and self.app.bot else self.bot
+            if not target_bot:
                 self.bot = Bot(token=self.token)
-            await self.bot.send_message(chat_id=self.chat_id, text=text, parse_mode='Markdown')
+                target_bot = self.bot
+                
+            await target_bot.send_message(chat_id=self.chat_id, text=text, parse_mode='Markdown')
         except Exception as e:
             self.logger.error(f"Failed to send telegram message: {e}")
 
@@ -114,8 +118,11 @@ class TelegramManager:
         
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        self.logger.info("Telegram Bot Thread Started")
-        self.app.run_polling()
+        pid = os.getpid()
+        self.logger.info(f"Telegram Bot Thread Started (PID: {pid})")
+        
+        # stop_signals=None is safer when running inside a sub-thread
+        self.app.run_polling(stop_signals=None)
 
     def start_thread(self):
         t = threading.Thread(target=self.run_bot, daemon=True)

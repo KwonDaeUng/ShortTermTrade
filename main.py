@@ -9,8 +9,10 @@ from trader import Trader
 from telegram_manager import TelegramManager
 
 def main():
+    import os
+    pid = os.getpid()
     logger = setup_logger("ShortTermBot", "bot.log")
-    logger.info("Starting ShortTermTrade Bot...")
+    logger.info(f"--- Bot Starting (PID: {pid}) ---")
 
     config = load_config()
     state = load_state()
@@ -86,6 +88,7 @@ def main():
     trader = Trader(trade_api, state, config, logger, telegram=telegram)
 
     interval = config.get("monitoring_interval_sec", 1)
+    last_report_time = time.time()
 
     try:
         while True:
@@ -109,6 +112,12 @@ def main():
                     balance_krw = trade_api.get_balance("KRW")
                     holdings_count = len(state.get("holdings", {}))
                     logger.info(f"[Summary] KRW: {balance_krw:,.0f} | Count: {holdings_count}")
+
+                # 1시간마다 텔레그램 자동 보고서 전송
+                if time.time() - last_report_time >= 3600:
+                    logger.info("Sending hourly automated report to Telegram...")
+                    telegram.send_message_sync(f"🕒 *정기 매매 보고 (1시간 단위)*\n{report_callback()}")
+                    last_report_time = time.time()
 
                 # 상태 저장
                 save_state(state)
