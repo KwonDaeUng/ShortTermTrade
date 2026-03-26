@@ -6,6 +6,7 @@ from upbit_api import UpbitDataAPI, UpbitTradeAPI
 from simulator import SimulatorAPI
 from strategy import Strategy
 from trader import Trader
+from telegram_manager import TelegramManager
 
 def main():
     logger = setup_logger("ShortTermBot", "bot.log")
@@ -26,8 +27,51 @@ def main():
         # 실제 투자
         trade_api = UpbitTradeAPI()
 
+    # --- Telegram Callbacks ---
+    def config_callback(action="get", key=None, value=None):
+        nonlocal config
+        if action == "get":
+            return config
+        elif action == "set":
+            if key in config:
+                config[key] = value
+                with open("config.json", "w", encoding="utf-8") as f:
+                    import json
+                    json.dump(config, f, indent=4, ensure_ascii=False)
+                return True
+        return False
+
+    def report_callback():
+        if not is_simulation:
+            return "실전 매매 모드입니다. (상세 보고서 미지원)"
+        
+        hist = trade_api.trade_history
+        if not hist:
+            return "거래 내역이 없습니다."
+        
+        realized_pn_l = sum([t.get('net_return', 0) for t in hist if t['type'] == 'sell'])
+        total_buy = sum([t.get('total_cost', 0) for t in hist if t['type'] == 'buy'])
+        
+        return f"현재 잔고: {trade_api.get_balance('KRW'):,.0f} KRW\n누적 실현 손익: {realized_pn_l:,.0f} KRW\n총 매수 금액: {total_buy:,.0f} KRW"
+
+    def state_callback():
+        holdings = state.get("holdings", {})
+        if not holdings:
+            return "현재 보유 코인이 없습니다."
+        
+        res = []
+        for t, info in holdings.items():
+            curr = data_api.get_current_price(t)
+            profit = (curr / info['avg_price'] - 1) * 100
+            res.append(f"• {t}: {info['avg_price']:,.2f} -> {curr:,.2f} ({profit:+.2f}%)")
+        return "\n".join(res)
+
+    telegram = TelegramManager(config_callback, report_callback, state_callback)
+    telegram.start_thread()
+    # --------------------------
+
     strategy = Strategy(data_api, logger, rank_limit=config.get("rank_volume_limit", 30))
-    trader = Trader(trade_api, state, config, logger)
+    trader = Trader(trade_api, state, config, logger, telegram=telegram)
 
     interval = config.get("monitoring_interval_sec", 1)
 

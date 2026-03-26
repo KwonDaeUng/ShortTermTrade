@@ -2,3 +2,4 @@ pyupbit
 python-dotenv
 pandas
 requests
+python-telegram-bot

@@ -1,11 +1,12 @@
 import time
 
 class Trader:
-    def __init__(self, api, state, config, logger):
+    def __init__(self, api, state, config, logger, telegram=None):
         self.api = api
         self.state = state
         self.config = config
         self.logger = logger
+        self.telegram = telegram
         
         # 기본 설정값 로드
         self.investment_steps = self.config.get("investment_steps", [5500, 11000, 22000, 44000, 88000])
@@ -28,7 +29,11 @@ class Trader:
         res = self.api.buy_market_order(ticker, amount)
         
         if res:
+            msg = f"🟢 [매수] {ticker} ({step}단계)\n매수금액: {amount:,.0f} KRW\n현재가: {current_price:,.2f}"
             self.logger.info(f"[{ticker}] Order Placed for Step {step} with {amount} KRW.")
+            if self.telegram:
+                self.telegram.send_message_sync(msg)
+            
             fee = amount * 0.0005
             net_amount = amount - fee
             bought_vol = net_amount / current_price
@@ -64,11 +69,20 @@ class Trader:
         if ticker not in holdings:
             return False
             
-        vol = holdings[ticker]["volume"]
+        info = holdings[ticker]
+        avg_price = info["avg_price"]
+        vol = info["volume"]
+        
         res = self.api.sell_market_order(ticker, vol)
         if res:
             current_price = self.api.get_current_price(ticker)
+            profit_rate = (current_price / avg_price - 1) * 100
+            msg = f"🔴 [매도] {ticker}\n사유: {reason}\n매도가: {current_price:,.2f}\n수익률: {profit_rate:+.2f}%"
+            
             self.logger.info(f"[{ticker}] Sold all ({vol:,.4f}). Reason: {reason}, Price: {current_price:,.2f}")
+            if self.telegram:
+                self.telegram.send_message_sync(msg)
+                
             del holdings[ticker]
             self.state["holdings"] = holdings
             return True
