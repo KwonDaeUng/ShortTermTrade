@@ -89,6 +89,14 @@ class TelegramManager:
         else:
             await update.message.reply_text(f"설정 변경 실패: {key} 항목을 찾을 수 없거나 형식이 잘못되었습니다.")
 
+    async def error_handler(self, update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Log the error."""
+        from telegram.error import Conflict
+        if isinstance(context.error, Conflict):
+            self.logger.error("!!! 텔레그램 중복 실행 감지 !!! 이 봇 토큰으로 다른 인스턴스가 이미 실행 중입니다.")
+        else:
+            self.logger.error(f"Telegram Exception: {context.error}")
+
     def run_bot(self):
         if not self.token:
             return
@@ -100,6 +108,9 @@ class TelegramManager:
         self.app.add_handler(CommandHandler("config", self.config_command))
         self.app.add_handler(CommandHandler("status", self.status_command))
         self.app.add_handler(CommandHandler("set", self.set_command))
+        
+        # 에러 핸들러 추가
+        self.app.add_error_handler(self.error_handler)
         
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
